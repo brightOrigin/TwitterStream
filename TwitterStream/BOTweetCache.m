@@ -143,29 +143,19 @@ const NSInteger MAX_TWEETS = 10;
                                                            createdAt:[createdAt getDateWithFormat:@"EEE MMM d HH:mm:ss Z y"]
                                                         retweetCount:retweetCount];
             [tweetArray addObject:newTweet];
+            DLog(@"Cache #%i, retweet count = %@", self.validCachedTweets.count, newTweet.retweetCount);
         }
     }
 
     [tweetArray addObjectsFromArray:self.validCachedTweets];
 
     NSSortDescriptor *count = [[NSSortDescriptor alloc] initWithKey:@"retweetCount" ascending:NO];
-//    NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"createdAt" ascending:NO];
-    NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"userName" ascending:YES];
+    NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"createdAt" ascending:NO];
+//    NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"userName" ascending:YES];
     NSArray *sortedTweets = [tweetArray sortedArrayUsingDescriptors:@[count, user]];
 
-//    NSArray *validTweets = [self getValidTweetsFromArray:sortedTweets];
-
-//    if (self.validCachedTweets.count >= 10)
-//    {
-//        self.validCachedTweets = [sortedTweets subarrayWithRange:NSMakeRange(0, MAX_TWEETS)];
-//    }
-//    else
-//    {
-
     self.validCachedTweets = sortedTweets;
-    DLog(@"Cache count %i", self.validCachedTweets.count);
-
-//    }
+//    DLog(@"Cache count %i", self.validCachedTweets.count);
 
     // update table view
     [self.tableView reloadData];
