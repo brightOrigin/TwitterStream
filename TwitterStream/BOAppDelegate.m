@@ -7,13 +7,19 @@
 //
 
 #import "BOAppDelegate.h"
+#import "BOTwitterStreamTableViewController.h"
 
 @implementation BOAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    // Override point for customization after application launch.
+
+    BOTwitterStreamTableViewController *twitterStreamTableViewController = [[BOTwitterStreamTableViewController alloc] init];
+
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:twitterStreamTableViewController];
+
+    self.window.rootViewController = navigationController;
     self.window.backgroundColor = [UIColor whiteColor];
     [self.window makeKeyAndVisible];
     return YES;
