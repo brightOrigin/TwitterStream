@@ -103,10 +103,7 @@
 
             if ([twitterAccounts count] > 0)
             {
-
-                // TODO: switch to lastObject after testing
-//                ACAccount *account = [twitterAccounts lastObject];
-                self.twitterAccount = [twitterAccounts objectAtIndex:1];
+                self.twitterAccount = [twitterAccounts lastObject];
 
                 if (!self.tweetCache)
                 {

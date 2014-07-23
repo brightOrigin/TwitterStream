@@ -51,8 +51,9 @@
 
     NSInteger intValue = [tweetData integerValue];
 
-    if (intValue > 0) // twitter noise
+    if (intValue > 0)
     {
+        // twitter stay-alive noise
     }
     else
     {
@@ -60,7 +61,6 @@
         NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData:data
                                                                      options:NSJSONReadingAllowFragments
                                                                        error:&error];
-
 //        DLog(@"json server response %@", responseDict);
 //        DLog(@"error %@", [error localizedDescription]);
 

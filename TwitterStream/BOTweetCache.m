@@ -5,8 +5,6 @@
 
 #import "BOTweetCache.h"
 #import <Accounts/Accounts.h>
-#import <Twitter/Twitter.h>
-#import "BOSessionManager.h"
 #import "BOTweetModel.h"
 #import "NSString+NSDateConversions.h"
 #import "BOTwitterTableViewCell.h"
@@ -23,9 +21,7 @@ const NSInteger MAX_TWEETS = 10;
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) BOSessionManager *sessionManager;
 @property (nonatomic, strong) NSTimer *windowStartTimer;
-@property (nonatomic, strong) NSArray *validCachedTweets; // TODO: a more robust solution would persist the cache to disk using CoreData, etc..
-@property (nonatomic, strong) NSArray *cachedTweets; // TODO: a more robust solution would persist the cache to disk using CoreData, etc..
-
+@property (nonatomic, strong) NSArray *validCachedTweets; 
 
 @end
 
@@ -48,9 +44,7 @@ const NSInteger MAX_TWEETS = 10;
 - (void) resetCacheWithWindowSize:(NSInteger)windowSize
 {
     self.windowSize = windowSize;
-//    [self.sessionManager toggleStreaming:NO];
     self.validCachedTweets = [NSArray array];
-    self.cachedTweets = [NSArray array];
     [self stopTimer];
     [self.tableView reloadData];
 }
@@ -106,6 +100,10 @@ const NSInteger MAX_TWEETS = 10;
     [self processTweets:data];
 }
 
+/**
+* This method handles most of the caching by simply adding any new tweets to
+* an array and then sorting them by retweet count.
+**/
 - (void) processTweets:(id)newTweetData
 {
     NSArray *newTweetsArray;
@@ -143,7 +141,7 @@ const NSInteger MAX_TWEETS = 10;
                                                            createdAt:[createdAt getDateWithFormat:@"EEE MMM d HH:mm:ss Z y"]
                                                         retweetCount:retweetCount];
             [tweetArray addObject:newTweet];
-            DLog(@"Cache #%i, retweet count = %@", self.validCachedTweets.count, newTweet.retweetCount);
+//            DLog(@"Cache #%i, retweet count = %@", self.validCachedTweets.count, newTweet.retweetCount);
         }
     }
 
@@ -188,11 +186,12 @@ const NSInteger MAX_TWEETS = 10;
 
 }
 
+/**
+* Fired every second by the timer and updates the valid tweets in the cache based
+* on the current window size
+*/
 - (void) updateStartWindowOffset:(NSTimer *)timer
 {
-
-//    DLog(@"before startWindowOffset = %f and now = %F", startWindowExpirationOffset, [[NSDate date] timeIntervalSince1970]);
-
     // update the start window offset
     startWindowExpirationOffset = [[NSDate dateWithTimeIntervalSinceNow:-(self.windowSize * 60)]
                                            timeIntervalSince1970];
@@ -203,6 +202,10 @@ const NSInteger MAX_TWEETS = 10;
     [self.tableView reloadData];
 }
 
+/**
+* Prunes the current cache of any tweets that are no longer in the
+* rolling window.
+*/
 - (NSArray *) getValidTweetsFromArray:(NSArray *)tweetsArray
 {
     NSMutableArray *validTweets = [NSMutableArray array];
