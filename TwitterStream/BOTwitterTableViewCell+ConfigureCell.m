@@ -12,9 +12,9 @@
 
 - (void) configureCell:(BOTweetModel *)tweet;
 {
-    self.userLabel.text = tweet.userName;
+    self.userLabel.text = [NSString stringWithFormat:@"@%@", tweet.userName];
     self.tweetLabel.text = tweet.tweet;
-    self.retweetCountLabel.text = [NSString stringWithFormat:@"%@", tweet.retweetCount];
+    self.retweetCountLabel.text = [tweet.retweetCount description];
 
     RelativeDateDescriptor *descriptor = [[RelativeDateDescriptor alloc] initWithPriorDateDescriptionFormat:@"%@ ago"
                                                                                   postDateDescriptionFormat:@"in %@"];

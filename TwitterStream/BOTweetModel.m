@@ -13,6 +13,7 @@
                             tweet:(NSString *)tweet
                         createdAt:(NSDate *)createdAt
                      retweetCount:(NSNumber *)retweetCount
+                          tweetID:(NSNumber *)tweetID
 {
     self = [super init];
     if (self)
@@ -21,32 +22,15 @@
         self.tweet = tweet;
         self.createdAt = createdAt;
         self.retweetCount = retweetCount;
+        self.tweetID = tweetID;
     }
 
     return self;
 }
 
-- (instancetype) initWithDictionary:(NSDictionary *)data
+- (BOOL) isEqual:(id)other
 {
-    self = [super init];
-    if (self)
-    {
-        if (data)
-        {
-            NSDictionary *user = [data objectForKey:@"user"];
-            if (user)
-            {
-                self.userName = [user objectForKey:@"screen_name"];
-            }
-
-            self.createdAt = [[data objectForKey:@"created_at"] getDateWithFormat:@"EEE MMM d HH:mm:ss Z y"];
-            self.tweet = [data objectForKey:@"text"];
-            self.retweetCount = [data objectForKey:@"retweet_count"];
-        }
-    }
-
-    return self;
-
+    return [((BOTweetModel *) other).tweetID isEqualToNumber:self.tweetID];
 }
 
 @end

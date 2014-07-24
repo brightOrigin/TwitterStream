@@ -11,14 +11,14 @@
 @property (nonatomic, copy) NSString *userName;
 @property (nonatomic, copy) NSString *tweet;
 @property (nonatomic, strong) NSDate *createdAt;
-@property (nonatomic, assign) NSNumber *retweetCount;
+@property (nonatomic, strong) NSNumber *retweetCount;
+@property (nonatomic, strong) NSNumber *tweetID;
 
 
 - (instancetype) initWithUserName:(NSString *)userName
                             tweet:(NSString *)tweet
                         createdAt:(NSDate *)createdAt
-                     retweetCount:(NSNumber *)retweetCount;
-
-- (instancetype) initWithDictionary:(NSDictionary *)data;
+                     retweetCount:(NSNumber *)retweetCount
+                          tweetID:(NSNumber *)tweetID;
 
 @end

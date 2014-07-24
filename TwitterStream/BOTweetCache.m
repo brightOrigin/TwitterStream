@@ -21,7 +21,9 @@ const NSInteger MAX_TWEETS = 10;
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) BOSessionManager *sessionManager;
 @property (nonatomic, strong) NSTimer *windowStartTimer;
-@property (nonatomic, strong) NSArray *validCachedTweets; 
+@property (nonatomic, strong) NSArray *validCachedTweets;
+@property (nonatomic, strong) NSMutableDictionary *validCachedTweetsDict;
+
 
 @end
 
@@ -36,6 +38,7 @@ const NSInteger MAX_TWEETS = 10;
         self.windowSize = windowSize;
         self.tableView = tableView;
         self.tableView.dataSource = self;
+        self.validCachedTweetsDict = [NSMutableDictionary dictionary];
     }
 
     return self;
@@ -45,6 +48,7 @@ const NSInteger MAX_TWEETS = 10;
 {
     self.windowSize = windowSize;
     self.validCachedTweets = [NSArray array];
+    [self.validCachedTweetsDict removeAllObjects];
     [self stopTimer];
     [self.tableView reloadData];
 }
@@ -101,8 +105,9 @@ const NSInteger MAX_TWEETS = 10;
 }
 
 /**
-* This method handles most of the caching by simply adding any new tweets to
-* an array and then sorting them by retweet count.
+* This method handles most of the caching by first checking to see if the new tweets retweet count would make
+* the top 10. If it would then it adds it to a temp array, incorporates any existing tweets while
+* removing any existing duplicates, sorts the array and resets the tables data source to the top 10
 **/
 - (void) processTweets:(id)newTweetData
 {
@@ -127,33 +132,56 @@ const NSInteger MAX_TWEETS = 10;
 
     for (NSDictionary *newTweetDict in newTweetsArray)
     {
-        NSDictionary *userDict = [newTweetDict objectForKey:@"user"];
-        NSString *tweet = [newTweetDict objectForKey:@"text"];
-        NSString *createdAt = [newTweetDict objectForKey:@"created_at"];
-        NSNumber *retweetCount = [newTweetDict objectForKey:@"retweet_count"];
+        NSDictionary *retweetDictionary = [newTweetDict objectForKey:@"retweeted_status"];
 
-        if (userDict && tweet && retweetCount)
+        if (retweetDictionary)
         {
-            // create new tweet object
-            BOTweetModel *newTweet = [[BOTweetModel alloc]
-                                                    initWithUserName:[userDict objectForKey:@"screen_name"]
-                                                               tweet:tweet
-                                                           createdAt:[createdAt getDateWithFormat:@"EEE MMM d HH:mm:ss Z y"]
-                                                        retweetCount:retweetCount];
-            [tweetArray addObject:newTweet];
-//            DLog(@"Cache #%i, retweet count = %@", self.validCachedTweets.count, newTweet.retweetCount);
+            NSDate *retweetDate = [[retweetDictionary objectForKey:@"created_at"]
+                                                      getDateWithFormat:@"EEE MMM d HH:mm:ss Z y"];
+
+            if ([retweetDate timeIntervalSince1970] > startWindowExpirationOffset)
+            {
+                NSNumber *retweetCount = [NSNumber numberWithInt:[[retweetDictionary objectForKey:@"retweet_count"] intValue]];
+
+                // check if retweet count would make the top 10
+                if (retweetCount >= ((BOTweetModel *) [self.validCachedTweets lastObject]).retweetCount)
+                {
+
+                    NSNumber *tweetID = [NSNumber numberWithInt:[[retweetDictionary objectForKey:@"id"] intValue]];
+                    NSString *userName = [[retweetDictionary objectForKey:@"user"] objectForKey:@"screen_name"];
+                    NSString *tweet = [retweetDictionary objectForKey:@"text"];
+
+                    if (userName && tweet && retweetCount)
+                    {
+                        // create new tweet object
+                        BOTweetModel *newTweet = [[BOTweetModel alloc] initWithUserName:userName
+                                                                                  tweet:tweet
+                                                                              createdAt:retweetDate
+                                                                           retweetCount:retweetCount
+                                                                                tweetID:tweetID];
+
+                        [tweetArray addObject:newTweet];
+                    }
+                }
+            }
         }
     }
 
-    [tweetArray addObjectsFromArray:self.validCachedTweets];
+    // add existing tweets to array only if it hasn't been updated by a new retweet
+    for (BOTweetModel *currentTweet in self.validCachedTweets)
+    {
+        if (![tweetArray containsObject:currentTweet])
+        {
+            [tweetArray addObject:currentTweet];
+        }
+    }
 
     NSSortDescriptor *count = [[NSSortDescriptor alloc] initWithKey:@"retweetCount" ascending:NO];
     NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"createdAt" ascending:NO];
-//    NSSortDescriptor *user = [[NSSortDescriptor alloc] initWithKey:@"userName" ascending:YES];
-    NSArray *sortedTweets = [tweetArray sortedArrayUsingDescriptors:@[count, user]];
 
-    self.validCachedTweets = sortedTweets;
-//    DLog(@"Cache count %i", self.validCachedTweets.count);
+    // sort the new tweets array and return the top 10
+    self.validCachedTweets = [[tweetArray sortedArrayUsingDescriptors:@[count, user]]
+                                          subarrayWithRange:NSMakeRange(0, MIN(tweetArray.count, MAX_TWEETS))];
 
     // update table view
     [self.tableView reloadData];
@@ -187,8 +215,8 @@ const NSInteger MAX_TWEETS = 10;
 }
 
 /**
-* Fired every second by the timer and updates the valid tweets in the cache based
-* on the current window size
+* Fired every second by the timer to update the valid tweets in the cache based
+* on the specified window size
 */
 - (void) updateStartWindowOffset:(NSTimer *)timer
 {
@@ -196,9 +224,9 @@ const NSInteger MAX_TWEETS = 10;
     startWindowExpirationOffset = [[NSDate dateWithTimeIntervalSinceNow:-(self.windowSize * 60)]
                                            timeIntervalSince1970];
 
-    // remove any expired tweets from view
-    NSArray *validTweets = [self getValidTweetsFromArray:self.validCachedTweets];
-    self.validCachedTweets = validTweets;
+    // remove any expired tweets
+    self.validCachedTweets = [self getValidTweetsFromArray:self.validCachedTweets];
+
     [self.tableView reloadData];
 }
 
